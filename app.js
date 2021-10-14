@@ -52,6 +52,8 @@ var job = new CronJob(
       }
     }, async function (err, resp, body) {
       try {
+        console.log(err)
+        console.log(resp)
         console.log(body)
         var json = JSON.parse(body);
         await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
