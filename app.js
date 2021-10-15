@@ -46,27 +46,31 @@ var job = new CronJob(
   async function () {
     const request = require('request');
     console.log('You will see this message every second');
-    request.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {
-      'auth': {
-        'bearer': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NDgyOTEzfQ.31fodjsIbuKKCpce8_-rKEwnOOXolt6Ic_jF-Y8MQEg'
+    try {
+      let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {headers: {
+        'Authorization' : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NDgyOTEzfQ.31fodjsIbuKKCpce8_-rKEwnOOXolt6Ic_jF-Y8MQEg'
+      }})
+      console.log(result.data);
+      var json = result.data;
+      await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
+      let responseString = "";
+      for (const e of json.especialidades) {
+        responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
       }
-    }, async function (err, resp, body) {
-      try {
-        console.log(err)
-        console.log(resp)
-        console.log(body)
-        var json = JSON.parse(body);
-        await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
-        let responseString = "";
-        for (const e of json.especialidades) {
-          responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
-        }
-        await sendMessageTo(responseString, -1001516165720)
-        await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
-      } catch (ex) {
-        console.log(ex);
-      }
-    });
+      await sendMessageTo(responseString, -1001516165720)
+      await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
+    } catch (ex) {
+      console.log(ex);
+    }
+
+    console.log('Request')
+    // request.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {
+    //   'auth': {
+    //     'bearer': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NDgyOTEzfQ.31fodjsIbuKKCpce8_-rKEwnOOXolt6Ic_jF-Y8MQEg'
+    //   }
+    // }, async function (err, resp, body) {
+
+    // });
   },
   null,
   true,
