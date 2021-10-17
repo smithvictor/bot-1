@@ -5,6 +5,7 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const axios = require('axios');
 var cron = require('node-cron');
+var chalk = require('chalk');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -40,30 +41,18 @@ app.use(function (err, req, res, next) {
   res.render('error');
 });
 
+var processing = false;
 var CronJob = require('cron').CronJob;
+const { request } = require('express');
 var job = new CronJob(
-  '*/50 * * * * *',
-  async function () {
-    const request = require('request');
-    console.log('You will see this message every second');
-    try {
-      let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {headers: {
-        'Authorization' : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NDgyOTEzfQ.31fodjsIbuKKCpce8_-rKEwnOOXolt6Ic_jF-Y8MQEg'
-      }})
-      console.log(result.data);
-      var json = result.data;
-      await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
-      let responseString = "";
-      for (const e of json.especialidades) {
-        responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
-      }
-      await sendMessageTo(responseString, -1001516165720)
-      await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
-    } catch (ex) {
-      console.log(ex);
+  '0 */1 * * * *',
+  function () {
+    //const request = require('request');
+    if(processing){
+      console.log(chalk.black.bgYellow('REQUEST IN PROGRESS. SKIPPING....'));
+      return;
     }
-
-    console.log('Request')
+    dataCycle();
     // request.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {
     //   'auth': {
     //     'bearer': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NDgyOTEzfQ.31fodjsIbuKKCpce8_-rKEwnOOXolt6Ic_jF-Y8MQEg'
@@ -77,6 +66,34 @@ var job = new CronJob(
   'America/Los_Angeles'
 );
 
+async function dataCycle(){
+  processing = true;
+  let date = new Date();
+  console.log('------------------');
+  console.log(chalk.black.bgBlue(`NEW CYCLE: STARTED AT ${date.toString()}`));
+  try {
+    let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, headers: {
+      'Authorization' : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NzQ1NzQ1fQ.s9fUIlBgQCsk8k65JTL8qbpDcefXn5FpRG87HKt97Xo'
+    }})
+    //console.log(result.data);
+    var json = result.data;
+    await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
+    let responseString = "";
+    for (const e of json.especialidades) {
+      responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
+    }
+    await sendMessageTo(responseString, -1001516165720)
+    await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
+    console.log(chalk.black.bgGreen('OK DATA'));
+  } catch (ex) {
+    console.log(ex);
+    console.log(chalk.black.bgRed('ERROR DATA'));
+  }
+  console.log(chalk.black.bgBlue('CYCLE COMPLETED'));
+  console.log('------------------');
+  processing = false;
+}
+
 async function sendMessageTo(message, target) {
   try {
     const response = await axios.post('https://api.telegram.org/bot1773275784:AAGexEOH23uYz0x4zXP8MpyMx-I_qhfNvkw/sendMessage', { chat_id: target, text: message, parse_mode: "Markdown" });
@@ -86,14 +103,7 @@ async function sendMessageTo(message, target) {
   }
 }
 
-function preventSleep(){
-  console.log('IDLING PREVENTER');
-  axios.get('https://bot-datos-smith.herokuapp.com/');
-}
-
-cron.schedule('*/10 * * * *', () => {
-  console.log('RUNNING PLANNED TASK U');
-  preventSleep();
-});
+console.log('INIT REQUEST');
+dataCycle();
 
 module.exports = app;
