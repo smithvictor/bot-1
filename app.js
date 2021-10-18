@@ -9,6 +9,7 @@ var chalk = require('chalk');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NzQ1NzQ1fQ.s9fUIlBgQCsk8k65JTL8qbpDcefXn5FpRG87HKt97Xo";
 
 var app = express();
 
@@ -73,20 +74,23 @@ async function dataCycle(){
   console.log(chalk.black.bgBlue(`NEW CYCLE: STARTED AT ${date.toString()}`));
   try {
     let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, headers: {
-      'Authorization' : 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NzQ1NzQ1fQ.s9fUIlBgQCsk8k65JTL8qbpDcefXn5FpRG87HKt97Xo'
+      'Authorization' : `Bearer ${AUTH_TOKEN}`
     }})
     //console.log(result.data);
     var json = result.data;
     await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
     let responseString = "";
+    let folioCalculado = 0;
     for (const e of json.especialidades) {
+      folioCalculado += e.registrados;
       responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
     }
     await sendMessageTo(responseString, -1001516165720)
     await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
     console.log(chalk.black.bgGreen('OK DATA'));
+    console.log(chalk.black.bgBlueBright(`FOLIO CALCULADO: ${folioCalculado}`));
   } catch (ex) {
-    console.log(ex);
+    //console.log(ex);
     console.log(chalk.black.bgRed('ERROR DATA'));
   }
   console.log(chalk.black.bgBlue('CYCLE COMPLETED'));
