@@ -6,11 +6,14 @@ var logger = require('morgan');
 const axios = require('axios');
 var cron = require('node-cron');
 var chalk = require('chalk');
+var differenceInMinutes = require('date-fns/differenceInMinutes')
+require('dotenv').config();
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NzQ1NzQ1fQ.s9fUIlBgQCsk8k65JTL8qbpDcefXn5FpRG87HKt97Xo";
-
+let lastOkCycle = null;
+const LAST_CYCLE_MINUTES = 10;
 var app = express();
 
 // view engine setup
@@ -49,6 +52,12 @@ var job = new CronJob(
   '0 */1 * * * *',
   function () {
     //const request = require('request');
+    if(process.env.SLEEP_URL != undefined){
+      preventSleep();
+    }else{
+      console.log(chalk.bgBlue.black('IDLING PREVENTER NOT CONFIGURED, SKIPPING...'));
+    }
+
     if(processing){
       console.log(chalk.black.bgYellow('REQUEST IN PROGRESS. SKIPPING....'));
       return;
@@ -81,17 +90,37 @@ async function dataCycle(){
     await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
     let responseString = "";
     let folioCalculado = 0;
+    let restantes = 0;
+    let rechazados = 0;
     for (const e of json.especialidades) {
       folioCalculado += e.registrados;
+      if(e.clave != "rechazo"){
+        restantes += e.disponibles;
+      }
+      if(e.clave == "rechazo"){
+        rechazados = e.registrados;
+      }
       responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
     }
+    responseString += `\n\nPlazas restantes: ${restantes}`;
+    responseString += `\nPlazas registradas: ${folioCalculado - rechazados}`;
+    responseString += `\nPlazas registradas (incluyendo rechazos): ${folioCalculado}`;
     await sendMessageTo(responseString, -1001516165720)
     await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
     console.log(chalk.black.bgGreen('OK DATA'));
     console.log(chalk.black.bgBlueBright(`FOLIO CALCULADO: ${folioCalculado}`));
+    console.log(chalk.black.bgBlueBright(`FOLIOS REGISTRADOS: ${folioCalculado - rechazados}`));
+    console.log(chalk.black.bgBlueBright(`PLAZAS RESTANTES: ${restantes}`));
+    lastOkCycle = date;
   } catch (ex) {
     //console.log(ex);
     console.log(chalk.black.bgRed('ERROR DATA'));
+    if(lastOkCycle != null){
+      let difference = differenceInMinutes(new Date(), lastOkCycle);
+      if(difference > LAST_CYCLE_MINUTES){
+        await sendMessageTo(`BOT HAS EXCEEDED ERROR TIME: ${difference}`, -784594261);
+      }
+    }
   }
   console.log(chalk.black.bgBlue('CYCLE COMPLETED'));
   console.log('------------------');
@@ -104,6 +133,15 @@ async function sendMessageTo(message, target) {
   } catch (ex) {
     console.log(ex);
     console.log("FAILED TO SEND MESSAGE");
+  }
+}
+
+async function preventSleep(){
+  try{
+    console.log('IDLING PREVENTER');
+    await axios.get(process.env.SLEEP_URL);
+  }catch(ex){
+    console.log(chalk.bgRed.white('ERROR ON IDLING PREVENTER'));
   }
 }
 
