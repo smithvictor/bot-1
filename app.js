@@ -8,6 +8,8 @@ var cron = require('node-cron');
 var chalk = require('chalk');
 var differenceInMinutes = require('date-fns/differenceInMinutes')
 require('dotenv').config();
+const SocksProxyAgent = require('socks-proxy-agent');
+
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -82,7 +84,16 @@ async function dataCycle(){
   console.log('------------------');
   console.log(chalk.black.bgBlue(`NEW CYCLE: STARTED AT ${date.toString()}`));
   try {
-    let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, headers: {
+    const proxyHost = '187.130.139.197', proxyPort = 37812;
+    const proxyOptions = `socks4://${proxyHost}:${proxyPort}`;
+    const httpsAgent = new SocksProxyAgent(proxyOptions);
+    let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, 
+    // proxy:{
+    //   host: '187.130.139.197',
+    //   port: 37812
+    // },
+    httpsAgent : httpsAgent,
+    headers: {
       'Authorization' : `Bearer ${AUTH_TOKEN}`
     }})
     //console.log(result.data);
@@ -113,7 +124,7 @@ async function dataCycle(){
     console.log(chalk.black.bgBlueBright(`PLAZAS RESTANTES: ${restantes}`));
     lastOkCycle = date;
   } catch (ex) {
-    //console.log(ex);
+    console.log(ex);
     console.log(chalk.black.bgRed('ERROR DATA'));
     if(lastOkCycle != null){
       let difference = differenceInMinutes(new Date(), lastOkCycle);
