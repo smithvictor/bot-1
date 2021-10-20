@@ -84,7 +84,7 @@ async function dataCycle(){
   console.log('------------------');
   console.log(chalk.black.bgBlue(`NEW CYCLE: STARTED AT ${date.toString()}`));
   try {
-    const proxyHost = '187.130.139.197', proxyPort = 37812;
+    const proxyHost = process.env.PROXY_HOST, proxyPort = process.env.PROXY_PORT;
     const proxyOptions = `socks4://${proxyHost}:${proxyPort}`;
     const httpsAgent = new SocksProxyAgent(proxyOptions);
     let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, 
