@@ -13,7 +13,7 @@ const SocksProxyAgent = require('socks-proxy-agent');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-const AUTH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiTUFGUzk3MDMyMkhKQ1JMQjAzIiwiZXhwIjoxNjM0NzQ1NzQ1fQ.s9fUIlBgQCsk8k65JTL8qbpDcefXn5FpRG87HKt97Xo";
+const AUTH_TOKEN = process.env.AUTH_TOKEN;
 let lastOkCycle = null;
 const LAST_CYCLE_MINUTES = 10;
 var app = express();
@@ -92,7 +92,7 @@ async function dataCycle(){
     //   host: '187.130.139.197',
     //   port: 37812
     // },
-    httpsAgent : httpsAgent,
+    //httpsAgent : httpsAgent,
     headers: {
       'Authorization' : `Bearer ${AUTH_TOKEN}`
     }})
