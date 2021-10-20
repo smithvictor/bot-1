@@ -92,7 +92,7 @@ async function dataCycle(){
     //   host: '187.130.139.197',
     //   port: 37812
     // },
-    //httpsAgent : httpsAgent,
+    httpsAgent : httpsAgent,
     headers: {
       'Authorization' : `Bearer ${AUTH_TOKEN}`
     }})
