@@ -54,7 +54,7 @@ var processing = false;
 var CronJob = require('cron').CronJob;
 const { request } = require('express');
 var job = new CronJob(
-  '0 */2 * * * *',
+  '0 */1 * * * *',
   function () {
     console.log(process.env.SLEEP_URL);
     //const request = require('request');
@@ -93,7 +93,7 @@ async function dataCycle(){
     console.log(chalk.black.bgBlue(`Proxy host: ${proxyPort}`));
     const proxyOptions = `socks4://${proxyHost}:${proxyPort}`;
     const httpsAgent = new SocksProxyAgent(proxyOptions);
-    let result = await axios.get('https://enarm.salud.gob.mx/enarm20XX/especialidad/servicios/especialidades', {timeout: 300000, 
+    let result = await axios.get(`http://enarm.salud.gob.mx/enarm20XX/especialidad/servicios/especialidades?p=${Date.now()}`, {timeout: 300000, 
     // proxy:{
     //   host: '187.130.139.197',
     //   port: 37812
@@ -102,7 +102,12 @@ async function dataCycle(){
     headers: {
       'Authorization' : `Bearer ${AUTH_TOKEN}`,
       'Accept' : '*/*',
-      'Accept-Encoding': 'gzip, deflate, br'
+      'Accept-Encoding': 'gzip, deflate, br',
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36',
+      'Host': 'enarm.salud.gob.mx',
+      'Referer': 'https://enarm.salud.gob.mx/enarm/2022/especialidad/seleccionEnarm',
+      'Connection': 'keep-alive',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
     }})
     //console.log(result.data);
     var json = result.data;
@@ -122,8 +127,8 @@ async function dataCycle(){
       responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
     }
     responseString += `\n\nPlazas restantes: ${restantes}`;
-    //responseString += `\nPlazas registradas: ${folioCalculado - rechazados}`;
-    //responseString += `\nPlazas registradas (incluyendo rechazos): ${folioCalculado}`;
+    responseString += `\nPlazas seleccionadas (suma registrados): ${folioCalculado - rechazados}`;
+    responseString += `\nPlazas seleccionadas (incluyendo rechazos): ${folioCalculado}`;
     responseString += `\n\nFolio ACTUAL: *${json.selecter.folio}*`;
     await sendMessageTo(responseString, SELECTED_GROUP)
     await sendMessageTo("TERMINA UPDATE ________", SELECTED_GROUP)
