@@ -14,6 +14,9 @@ const SocksProxyAgent = require('socks-proxy-agent');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
+const ENARM_GROUP = -1001516165720;
+const TEST_GROUP = -1001617733917;
+const SELECTED_GROUP = ENARM_GROUP;
 let lastOkCycle = null;
 const LAST_CYCLE_MINUTES = 10;
 var app = express();
@@ -51,8 +54,9 @@ var processing = false;
 var CronJob = require('cron').CronJob;
 const { request } = require('express');
 var job = new CronJob(
-  '0 */1 * * * *',
+  '0 */2 * * * *',
   function () {
+    console.log(process.env.SLEEP_URL);
     //const request = require('request');
     if(process.env.SLEEP_URL != undefined){
       preventSleep();
@@ -85,20 +89,24 @@ async function dataCycle(){
   console.log(chalk.black.bgBlue(`NEW CYCLE: STARTED AT ${date.toString()}`));
   try {
     const proxyHost = process.env.PROXY_HOST, proxyPort = process.env.PROXY_PORT;
+    console.log(chalk.black.bgBlue(`Proxy host: ${proxyHost}`));
+    console.log(chalk.black.bgBlue(`Proxy host: ${proxyPort}`));
     const proxyOptions = `socks4://${proxyHost}:${proxyPort}`;
     const httpsAgent = new SocksProxyAgent(proxyOptions);
-    let result = await axios.get('https://enarm.salud.gob.mx/enarm/2021/especialidad/servicios/especialidades', {timeout: 300000, 
+    let result = await axios.get('https://enarm.salud.gob.mx/enarm20XX/especialidad/servicios/especialidades', {timeout: 300000, 
     // proxy:{
     //   host: '187.130.139.197',
     //   port: 37812
     // },
     httpsAgent : httpsAgent,
     headers: {
-      'Authorization' : `Bearer ${AUTH_TOKEN}`
+      'Authorization' : `Bearer ${AUTH_TOKEN}`,
+      'Accept' : '*/*',
+      'Accept-Encoding': 'gzip, deflate, br'
     }})
     //console.log(result.data);
     var json = result.data;
-    await sendMessageTo("INICIA UPDATE ________\nSTART", -1001516165720)
+    await sendMessageTo("INICIA UPDATE ________\nSTART", SELECTED_GROUP)
     let responseString = "";
     let folioCalculado = 0;
     let restantes = 0;
@@ -114,10 +122,11 @@ async function dataCycle(){
       responseString += `\n*${e.nombre}*\n_Registrados:_ *${e.registrados}* _Disponibles:_ *${e.disponibles}*\n`;
     }
     responseString += `\n\nPlazas restantes: ${restantes}`;
-    responseString += `\nPlazas registradas: ${folioCalculado - rechazados}`;
-    responseString += `\nPlazas registradas (incluyendo rechazos): ${folioCalculado}`;
-    await sendMessageTo(responseString, -1001516165720)
-    await sendMessageTo("TERMINA UPDATE ________", -1001516165720)
+    //responseString += `\nPlazas registradas: ${folioCalculado - rechazados}`;
+    //responseString += `\nPlazas registradas (incluyendo rechazos): ${folioCalculado}`;
+    responseString += `\n\nFolio ACTUAL: *${json.selecter.folio}*`;
+    await sendMessageTo(responseString, SELECTED_GROUP)
+    await sendMessageTo("TERMINA UPDATE ________", SELECTED_GROUP)
     console.log(chalk.black.bgGreen('OK DATA'));
     console.log(chalk.black.bgBlueBright(`FOLIO CALCULADO: ${folioCalculado}`));
     console.log(chalk.black.bgBlueBright(`FOLIOS REGISTRADOS: ${folioCalculado - rechazados}`));
