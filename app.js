@@ -93,7 +93,7 @@ async function dataCycle(){
     console.log(chalk.black.bgBlue(`Proxy host: ${proxyPort}`));
     const proxyOptions = `socks4://${proxyHost}:${proxyPort}`;
     const httpsAgent = new SocksProxyAgent(proxyOptions);
-    let result = await axios.get(`http://enarm.salud.gob.mx/enarm20XX/especialidad/servicios/especialidades?p=${Date.now()}`, {timeout: 300000, 
+    let result = await axios.get(`https://enarm.salud.gob.mx/enarm20XX/especialidad/servicios/especialidades?p=${Date.now()}`, {timeout: 300000, 
     // proxy:{
     //   host: '187.130.139.197',
     //   port: 37812
